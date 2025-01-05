@@ -1,4 +1,111 @@
-= Index page
+= Einführung in Prometheus
 ifndef::imagesdir[:imagesdir: images]
+Autor: Bajtik Berg
+Version: 1.0
+:toc: left
+:toc-title: Inhaltsverzeichnis
+:icons: font
+:sectnums:
+:source-highlighter: rouge
 
-image::img.png[]
+== Einleitung
+
+Prometheus wurde entwickelt, um die Überwachung moderner dynamischer Container-Anwendungen wie Kubernetes oder Docker
+zu vereinfachen. Jedoch kann Prometheus auch für die Überwachung von traditionellen nicht-container-basierten Anwendungen
+und Systemen verwendet werden. Über die Jahre hat sich Prometheus zu einem der beliebtesten Open-Source-Tools für die
+Überwachung von Anwendungen und Systemen entwickelt.
+
+
+== Warum Prometheus?
+
+Die zunehmende Komplexität moderner IT-Infrastrukturen erfordert Automatisierung:
+
+- Es laufen mehrere Server mit containerisierten Anwendungen.
+- Hunderte von Prozessen müssen koordiniert werden.
+
+Die Herausforderungen bestehen darin:
+
+- Die Stabilität der Systeme aufrechtzuerhalten.
+- Ausfallzeiten zu vermeiden, besonders ohne Einblick in die Hardware- oder Anwendungsebene bei Problemen.
+
+Die Risiken sind:
+
+- Ein Fehler in einem Dienst kann die Stabilität anderer Komponenten gefährden.
+- Die manuelle Fehlersuche ist aufgrund zahlreicher Fehlerquellen zeitaufwendig und kompliziert.
+
+
+== Installation
+
+=== Docker-Installation
+
+[source,shell]
+----
+docker run -p 9090:9090 prom/prometheus
+----
+
+* Öffnen Sie anschließend im Browser: http://localhost:9090.
+
+=== Installation ohne Docker
+
+1. Laden Sie die neueste Prometheus-Binärdatei von der offiziellen Website herunter.
+2. Entpacken Sie das Archiv und starten Sie die ausführbare Datei.
+
+[source,shell]
+----
+tar xvfz prometheus-*.tar.gz
+cd prometheus-*
+./prometheus
+----
+
+== Grundlagen der Prometheus-Architektur
+
+Prometheus verwendet einen Pull-basierten Ansatz, um Metriken von verschiedenen Endpunkten zu erfassen. Diese Metriken werden in einer Zeitreihendatenbank gespeichert und können mit der Abfragesprache PromQL abgefragt werden.
+
+=== Hauptkomponenten
+
+1. **Prometheus Server**: Erfasst und speichert Metriken.
+2. **Exporters**: Stellen Metriken von Anwendungen oder Systemen bereit.
+3. **Alertmanager**: Verarbeitet Benachrichtigungen basierend auf definierten Regeln.
+
+image::architecture.png[title="Prometheus Architektur"]
+
+== PromQL - Die Abfragesprache von Prometheus
+
+PromQL ist eine leistungsstarke Sprache, mit der Sie detaillierte Metriken analysieren können.
+
+=== Beispiele
+
+1. Alle Metriken anzeigen:
+[source,promql]
+----
+{__name__=~".*"}
+----
+
+2. Durchschnittliche CPU-Auslastung der letzten 5 Minuten:
+[source,promql]
+----
+avg(rate(cpu_usage_seconds_total[5m]))
+----
+
+== Integration von Exporters
+
+=== Node Exporter
+
+Der Node Exporter sammelt Systemmetriken wie CPU, RAM und Festplattennutzung.
+
+[source,shell]
+----
+docker run -d -p 9100:9100 prom/node-exporter
+----
+
+Öffnen Sie im Browser: http://localhost:9100/metrics.
+
+== Fazit
+
+Prometheus ist ein unverzichtbares Tool für die Überwachung moderner Anwendungen und Systeme. Mit seiner Flexibilität und Anpassbarkeit können Sie nahezu jedes Monitoring-Szenario abdecken.
+
+== Quellen
+
+* Transkript des Prometheus-Videos (bereitgestellt vom Benutzer)
+* Offizielle Prometheus-Dokumentation: https://prometheus.io/docs/
+* Eigene Kenntnisse und Erfahrungen mit Prometheus
