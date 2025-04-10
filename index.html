@@ -570,31 +570,27 @@ pre.rouge .gs {
 <div id="toc" class="toc2">
 <div id="toctitle">Inhaltsverzeichnis</div>
 <ul class="sectlevel1">
-<li><a href="#_einleitung">1. Einleitung</a></li>
+<li><a href="#_einleitung">1. Einleitung</a>
+<ul class="sectlevel2">
+<li><a href="#_welches_problem_löst_prometheus">1.1. Welches Problem löst Prometheus?</a></li>
+</ul>
+</li>
 <li><a href="#_warum_prometheus">2. Warum Prometheus?</a></li>
-<li><a href="#_installation">3. Installation</a>
+<li><a href="#_architektur_von_prometheus">3. Architektur von Prometheus</a></li>
+<li><a href="#_prometheus_in_quarkus">4. Prometheus in Quarkus</a>
 <ul class="sectlevel2">
-<li><a href="#_docker_installation">3.1. Docker-Installation</a></li>
-<li><a href="#_installation_ohne_docker">3.2. Installation ohne Docker</a></li>
+<li><a href="#_konfiguration_in_quarkus">4.1. Konfiguration in Quarkus</a></li>
+<li><a href="#_eigene_metriken_in_resource_klassen">4.2. Eigene Metriken in Resource-Klassen</a></li>
+<li><a href="#_promql_beispiele_für_quarkus">4.3. PromQL-Beispiele für Quarkus</a></li>
 </ul>
 </li>
-<li><a href="#_grundlagen_der_prometheus_architektur">4. Grundlagen der Prometheus-Architektur</a>
-<ul class="sectlevel2">
-<li><a href="#_hauptkomponenten">4.1. Hauptkomponenten</a></li>
-</ul>
-</li>
-<li><a href="#_promql_die_abfragesprache_von_prometheus">5. PromQL - Die Abfragesprache von Prometheus</a>
+<li><a href="#_promql_die_abfragesprache_von_prometheus">5. PromQL – Die Abfragesprache von Prometheus</a>
 <ul class="sectlevel2">
 <li><a href="#_beispiele">5.1. Beispiele</a></li>
 </ul>
 </li>
-<li><a href="#_integration_von_exporters">6. Integration von Exporters</a>
-<ul class="sectlevel2">
-<li><a href="#_node_exporter">6.1. Node Exporter</a></li>
-</ul>
-</li>
-<li><a href="#_fazit">7. Fazit</a></li>
-<li><a href="#_quellen">8. Quellen</a></li>
+<li><a href="#_fazit">6. Fazit</a></li>
+<li><a href="#_quellen">7. Quellen</a></li>
 </ul>
 </div>
 </div>
@@ -603,10 +599,33 @@ pre.rouge .gs {
 <h2 id="_einleitung"><a class="anchor" href="#_einleitung"></a>1. Einleitung</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Prometheus wurde entwickelt, um die Überwachung moderner dynamischer Container-Anwendungen wie Kubernetes oder Docker
-zu vereinfachen. Jedoch kann Prometheus auch für die Überwachung von traditionellen nicht-container-basierten Anwendungen
-und Systemen verwendet werden. Über die Jahre hat sich Prometheus zu einem der beliebtesten Open-Source-Tools für die
-Überwachung von Anwendungen und Systemen entwickelt.</p>
+<p>Prometheus ist ein Open-Source-Tool zur Überwachung von Systemen und Anwendungen. Es sammelt regelmäßig Messwerte
+(Metriken), etwa zur CPU-Auslastung, Anzahl von Anfragen oder Speichernutzung.</p>
+</div>
+<div class="paragraph">
+<p>Diese Daten speichert Prometheus in einer Zeitreihendatenbank. So kann man sehen, wie sich bestimmte Werte im Zeitverlauf verändern. Mit der eigenen Abfragesprache PromQL lassen sich die Daten gezielt auswerten.</p>
+</div>
+<div class="sect2">
+<h3 id="_welches_problem_löst_prometheus"><a class="anchor" href="#_welches_problem_löst_prometheus"></a>1.1. Welches Problem löst Prometheus?</h3>
+<div class="paragraph">
+<p>Moderne Software-Systeme bestehen oft aus vielen kleinen Diensten (Microservices), die dynamisch in Containern laufen. In dieser komplexen Umgebung wird es schwierig, den Überblick über den Zustand der Systeme zu behalten:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Läuft alles wie erwartet?</p>
+</li>
+<li>
+<p>Warum ist die Anwendung plötzlich langsam?</p>
+</li>
+<li>
+<p>Gibt es Fehlermuster, bevor ein Absturz passiert?</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Prometheus löst genau dieses Problem: Es sammelt regelmäßig präzise Messdaten über den Zustand und das Verhalten einer Anwendung. So kann man Fehler früh erkennen, Engpässe analysieren und Systeme effizienter betreiben.</p>
+</div>
 </div>
 </div>
 </div>
@@ -614,191 +633,204 @@ und Systemen verwendet werden. Über die Jahre hat sich Prometheus zu einem der 
 <h2 id="_warum_prometheus"><a class="anchor" href="#_warum_prometheus"></a>2. Warum Prometheus?</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Die zunehmende Komplexität moderner IT-Infrastrukturen erfordert Automatisierung:</p>
+<p>Prometheus ist besonders beliebt, weil es einige wichtige Vorteile mitbringt:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>Es laufen mehrere Server mit containerisierten Anwendungen.</p>
+<p><strong>Einfach zu integrieren:</strong> Man muss nur einen Endpoint bereitstellen, an dem Prometheus regelmäßig Messwerte abfragen kann.</p>
 </li>
 <li>
-<p>Hunderte von Prozessen müssen koordiniert werden.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Die Herausforderungen bestehen darin:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Die Stabilität der Systeme aufrechtzuerhalten.</p>
+<p><strong>Eigene Abfragesprache (PromQL):</strong> Ermöglicht sehr gezielte Auswertungen.</p>
 </li>
 <li>
-<p>Ausfallzeiten zu vermeiden, besonders ohne Einblick in die Hardware- oder Anwendungsebene bei Problemen.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Die Risiken sind:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Ein Fehler in einem Dienst kann die Stabilität anderer Komponenten gefährden.</p>
-</li>
-<li>
-<p>Die manuelle Fehlersuche ist aufgrund zahlreicher Fehlerquellen zeitaufwendig und kompliziert.</p>
+<p><strong>Gute Visualisierung mit Grafana:</strong> Daten können übersichtlich in Dashboards dargestellt werden.</p>
 </li>
 </ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_installation"><a class="anchor" href="#_installation"></a>3. Installation</h2>
+<h2 id="_architektur_von_prometheus"><a class="anchor" href="#_architektur_von_prometheus"></a>3. Architektur von Prometheus</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_docker_installation"><a class="anchor" href="#_docker_installation"></a>3.1. Docker-Installation</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="rouge highlight"><code data-lang="shell">docker run <span class="nt">-p</span> 9090:9090 prom/prometheus</code></pre>
-</div>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>Öffnen Sie anschließend im Browser: <a href="http://localhost:9090" class="bare">http://localhost:9090</a>.</p>
-</li>
-</ul>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_installation_ohne_docker"><a class="anchor" href="#_installation_ohne_docker"></a>3.2. Installation ohne Docker</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Laden Sie die neueste Prometheus-Binärdatei von der offiziellen Website herunter.</p>
-</li>
-<li>
-<p>Entpacken Sie das Archiv und starten Sie die ausführbare Datei.</p>
-</li>
-</ol>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="rouge highlight"><code data-lang="shell"><span class="nb">tar </span>xvfz prometheus-<span class="k">*</span>.tar.gz
-<span class="nb">cd </span>prometheus-<span class="k">*</span>
-./prometheus</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_grundlagen_der_prometheus_architektur"><a class="anchor" href="#_grundlagen_der_prometheus_architektur"></a>4. Grundlagen der Prometheus-Architektur</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Prometheus verwendet einen Pull-basierten Ansatz, um Metriken von verschiedenen Endpunkten zu erfassen. Diese Metriken werden in einer Zeitreihendatenbank gespeichert und können mit der Abfragesprache PromQL abgefragt werden.</p>
-</div>
-<div class="sect2">
-<h3 id="_hauptkomponenten"><a class="anchor" href="#_hauptkomponenten"></a>4.1. Hauptkomponenten</h3>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p><strong>Prometheus Server</strong>: Erfasst und speichert Metriken.</p>
-</li>
-<li>
-<p><strong>Exporters</strong>: Stellen Metriken von Anwendungen oder Systemen bereit.</p>
-</li>
-<li>
-<p><strong>Alertmanager</strong>: Verarbeitet Benachrichtigungen basierend auf definierten Regeln.</p>
-</li>
-</ol>
-</div>
 <div class="imageblock">
 <div class="content">
 <img src="images/architecture.png" alt="architecture">
 </div>
 <div class="title">Figure 1. Prometheus Architektur</div>
 </div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Prometheus-Server:</strong> Fragt regelmäßig Metriken ab und speichert sie.</p>
+</li>
+<li>
+<p><strong>Exporters / Jobs:</strong> Stellen Metriken unter <code>/metrics</code> bereit.</p>
+</li>
+<li>
+<p><strong>Pushgateway:</strong> Unterstützt kurzlebige Jobs, die Metriken einmalig senden.</p>
+</li>
+<li>
+<p><strong>Service Discovery:</strong> Erkennt automatisch neue Dienste (z. B. in Kubernetes).</p>
+</li>
+<li>
+<p><strong>Alertmanager:</strong> Versendet Warnungen auf Basis definierter Regeln.</p>
+</li>
+<li>
+<p><strong>Grafana:</strong> Visualisiert Metriken in Dashboards.</p>
+</li>
+<li>
+<p><strong>Web UI:</strong> Interface für direkte PromQL-Abfragen.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_promql_die_abfragesprache_von_prometheus"><a class="anchor" href="#_promql_die_abfragesprache_von_prometheus"></a>5. PromQL - Die Abfragesprache von Prometheus</h2>
+<h2 id="_prometheus_in_quarkus"><a class="anchor" href="#_prometheus_in_quarkus"></a>4. Prometheus in Quarkus</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>PromQL ist eine leistungsstarke Sprache, mit der Sie detaillierte Metriken analysieren können.</p>
+<p>Quarkus bietet eine integrierte Unterstützung für Micrometer und Prometheus. Die Metriken werden unter <code>/q/metrics</code> bereitgestellt. Voraussetzung dafür ist die Erweiterung <code>quarkus-micrometer-registry-prometheus</code>.</p>
+</div>
+<div class="sect2">
+<h3 id="_konfiguration_in_quarkus"><a class="anchor" href="#_konfiguration_in_quarkus"></a>4.1. Konfiguration in Quarkus</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="properties"><span class="py">quarkus.micrometer.export.prometheus.enabled</span><span class="p">=</span><span class="s">true</span>
+<span class="py">quarkus.micrometer.export.prometheus.path</span><span class="p">=</span><span class="s">/q/metrics</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Beispiel für <code>prometheus.yml</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">scrape_configs</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">job_name</span><span class="pi">:</span> <span class="s1">'</span><span class="s">quarkus-app'</span>
+    <span class="na">static_configs</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">targets</span><span class="pi">:</span> <span class="pi">[</span> <span class="s1">'</span><span class="s">quarkus:8080'</span> <span class="pi">]</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_eigene_metriken_in_resource_klassen"><a class="anchor" href="#_eigene_metriken_in_resource_klassen"></a>4.2. Eigene Metriken in Resource-Klassen</h3>
+<div class="paragraph">
+<p>Mit dem <code>MeterRegistry</code> lassen sich benutzerdefinierte Metriken erzeugen:</p>
+</div>
+<div class="paragraph">
+<p><strong>Zähler (Counter)</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="java"><span class="n">registry</span><span class="o">.</span><span class="na">counter</span><span class="o">(</span><span class="s">"person_counter"</span><span class="o">).</span><span class="na">increment</span><span class="o">();</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Timer</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="java"><span class="nc">Timer</span><span class="o">.</span><span class="na">Sample</span> <span class="n">sample</span> <span class="o">=</span> <span class="nc">Timer</span><span class="o">.</span><span class="na">start</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
+<span class="c1">// Operation</span>
+<span class="n">sample</span><span class="o">.</span><span class="na">stop</span><span class="o">(</span><span class="n">registry</span><span class="o">.</span><span class="na">timer</span><span class="o">(</span><span class="s">"person_timer"</span><span class="o">));</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Gauge (z. B. Listengröße)</strong></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="java"><span class="n">registry</span><span class="o">.</span><span class="na">gaugeCollectionSize</span><span class="o">(</span><span class="s">"person_list_size"</span><span class="o">,</span> <span class="nc">Tags</span><span class="o">.</span><span class="na">empty</span><span class="o">(),</span> <span class="n">myList</span><span class="o">);</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Diese Metriken erscheinen dann automatisch im <code>/q/metrics</code>-Output.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_promql_beispiele_für_quarkus"><a class="anchor" href="#_promql_beispiele_für_quarkus"></a>4.3. PromQL-Beispiele für Quarkus</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="promql">person_counter
+person_timer_count
+person_list_size
+http_server_requests_seconds_count{job="quarkus-app"}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Diese Abfragen funktionieren direkt im Prometheus-Interface oder in Grafana.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_promql_die_abfragesprache_von_prometheus"><a class="anchor" href="#_promql_die_abfragesprache_von_prometheus"></a>5. PromQL – Die Abfragesprache von Prometheus</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>PromQL ist eine leistungsstarke Sprache zur Analyse von Metriken.</p>
 </div>
 <div class="sect2">
 <h3 id="_beispiele"><a class="anchor" href="#_beispiele"></a>5.1. Beispiele</h3>
-<div class="olist arabic">
-<ol class="arabic">
+<div class="ulist">
+<ul>
 <li>
-<p>Alle Metriken anzeigen:</p>
+<p><strong>Alle Metriken anzeigen</strong></p>
 </li>
-</ol>
+</ul>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre>{__name__=~".*"}</pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
+<div class="ulist">
+<ul>
 <li>
-<p>Durchschnittliche CPU-Auslastung der letzten 5 Minuten:</p>
+<p><strong>Durchschnittliche CPU-Auslastung (Beispiel für Systemmetriken)</strong></p>
 </li>
-</ol>
+</ul>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre>avg(rate(cpu_usage_seconds_total[5m]))</pre>
 </div>
 </div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_integration_von_exporters"><a class="anchor" href="#_integration_von_exporters"></a>6. Integration von Exporters</h2>
-<div class="sectionbody">
-<div class="sect2">
-<h3 id="_node_exporter"><a class="anchor" href="#_node_exporter"></a>6.1. Node Exporter</h3>
-<div class="paragraph">
-<p>Der Node Exporter sammelt Systemmetriken wie CPU, RAM und Festplattennutzung.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Summe eines eigenen Counters</strong></p>
+</li>
+</ul>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="rouge highlight"><code data-lang="shell">docker run <span class="nt">-d</span> <span class="nt">-p</span> 9100:9100 prom/node-exporter</code></pre>
+<pre>sum(person_counter)</pre>
 </div>
-</div>
-<div class="paragraph">
-<p>Öffnen Sie im Browser: <a href="http://localhost:9100/metrics" class="bare">http://localhost:9100/metrics</a>.</p>
 </div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_fazit"><a class="anchor" href="#_fazit"></a>7. Fazit</h2>
+<h2 id="_fazit"><a class="anchor" href="#_fazit"></a>6. Fazit</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Prometheus ist ein unverzichtbares Tool für die Überwachung moderner Anwendungen und Systeme. Mit seiner Flexibilität und Anpassbarkeit können Sie nahezu jedes Monitoring-Szenario abdecken.</p>
+<p>Prometheus ist ein leistungsstarkes Tool zur Überwachung moderner Anwendungen. Besonders in Verbindung mit Quarkus ist es einfach zu integrieren und bietet umfangreiche Möglichkeiten zur Analyse und Visualisierung von Metriken.</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_quellen"><a class="anchor" href="#_quellen"></a>8. Quellen</h2>
+<h2 id="_quellen"><a class="anchor" href="#_quellen"></a>7. Quellen</h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
 <li>
-<p>Transkript des Prometheus-Videos (bereitgestellt vom Benutzer)</p>
+<p><a href="https://prometheus.io/docs/introduction/overview/">Prometheus Overview</a></p>
 </li>
 <li>
-<p>Offizielle Prometheus-Dokumentation: <a href="https://prometheus.io/docs/" class="bare">https://prometheus.io/docs/</a></p>
+<p><a href="https://prometheus.io/docs/introduction/first_steps/">Prometheus First Steps</a></p>
 </li>
 <li>
-<p>Eigene Kenntnisse und Erfahrungen mit Prometheus</p>
+<p><a href="https://grafana.com/docs/grafana/latest/datasources/prometheus/">Grafana Prometheus</a></p>
 </li>
 </ul>
 </div>
@@ -807,7 +839,7 @@ und Systemen verwendet werden. Über die Jahre hat sich Prometheus zu einem der 
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-01-05 15:18:07 UTC
+Last updated 2025-04-10 21:49:52 UTC
 </div>
 </div>
 </body>
