@@ -10,102 +10,134 @@ Version: 1.0
 
 == Einleitung
 
-Prometheus wurde entwickelt, um die Überwachung moderner dynamischer Container-Anwendungen wie Kubernetes oder Docker
-zu vereinfachen. Jedoch kann Prometheus auch für die Überwachung von traditionellen nicht-container-basierten Anwendungen
-und Systemen verwendet werden. Über die Jahre hat sich Prometheus zu einem der beliebtesten Open-Source-Tools für die
-Überwachung von Anwendungen und Systemen entwickelt.
+Prometheus ist ein Open-Source-Tool zur Überwachung von Systemen und Anwendungen. Es sammelt regelmäßig Messwerte
+(Metriken), etwa zur CPU-Auslastung, Anzahl von Anfragen oder Speichernutzung.
 
+Diese Daten speichert Prometheus in einer Zeitreihendatenbank. So kann man sehen, wie sich bestimmte Werte im Zeitverlauf verändern. Mit der eigenen Abfragesprache PromQL lassen sich die Daten gezielt auswerten.
+
+=== Welches Problem löst Prometheus?
+
+Moderne Software-Systeme bestehen oft aus vielen kleinen Diensten (Microservices), die dynamisch in Containern laufen. In dieser komplexen Umgebung wird es schwierig, den Überblick über den Zustand der Systeme zu behalten:
+
+- Läuft alles wie erwartet?
+- Warum ist die Anwendung plötzlich langsam?
+- Gibt es Fehlermuster, bevor ein Absturz passiert?
+
+Prometheus löst genau dieses Problem: Es sammelt regelmäßig präzise Messdaten über den Zustand und das Verhalten einer Anwendung. So kann man Fehler früh erkennen, Engpässe analysieren und Systeme effizienter betreiben.
 
 == Warum Prometheus?
 
-Die zunehmende Komplexität moderner IT-Infrastrukturen erfordert Automatisierung:
+Prometheus ist besonders beliebt, weil es einige wichtige Vorteile mitbringt:
 
-- Es laufen mehrere Server mit containerisierten Anwendungen.
-- Hunderte von Prozessen müssen koordiniert werden.
+- **Einfach zu integrieren:** Man muss nur einen Endpoint bereitstellen, an dem Prometheus regelmäßig Messwerte abfragen kann.
+- **Eigene Abfragesprache (PromQL):** Ermöglicht sehr gezielte Auswertungen.
+- **Gute Visualisierung mit Grafana:** Daten können übersichtlich in Dashboards dargestellt werden.
 
-Die Herausforderungen bestehen darin:
-
-- Die Stabilität der Systeme aufrechtzuerhalten.
-- Ausfallzeiten zu vermeiden, besonders ohne Einblick in die Hardware- oder Anwendungsebene bei Problemen.
-
-Die Risiken sind:
-
-- Ein Fehler in einem Dienst kann die Stabilität anderer Komponenten gefährden.
-- Die manuelle Fehlersuche ist aufgrund zahlreicher Fehlerquellen zeitaufwendig und kompliziert.
-
-
-== Installation
-
-=== Docker-Installation
-
-[source,shell]
-----
-docker run -p 9090:9090 prom/prometheus
-----
-
-* Öffnen Sie anschließend im Browser: http://localhost:9090.
-
-=== Installation ohne Docker
-
-1. Laden Sie die neueste Prometheus-Binärdatei von der offiziellen Website herunter.
-2. Entpacken Sie das Archiv und starten Sie die ausführbare Datei.
-
-[source,shell]
-----
-tar xvfz prometheus-*.tar.gz
-cd prometheus-*
-./prometheus
-----
-
-== Grundlagen der Prometheus-Architektur
-
-Prometheus verwendet einen Pull-basierten Ansatz, um Metriken von verschiedenen Endpunkten zu erfassen. Diese Metriken werden in einer Zeitreihendatenbank gespeichert und können mit der Abfragesprache PromQL abgefragt werden.
-
-=== Hauptkomponenten
-
-1. **Prometheus Server**: Erfasst und speichert Metriken.
-2. **Exporters**: Stellen Metriken von Anwendungen oder Systemen bereit.
-3. **Alertmanager**: Verarbeitet Benachrichtigungen basierend auf definierten Regeln.
+== Architektur von Prometheus
 
 image::architecture.png[title="Prometheus Architektur"]
 
-== PromQL - Die Abfragesprache von Prometheus
+- **Prometheus-Server:** Fragt regelmäßig Metriken ab und speichert sie.
+- **Exporters / Jobs:** Stellen Metriken unter `/metrics` bereit.
+- **Pushgateway:** Unterstützt kurzlebige Jobs, die Metriken einmalig senden.
+- **Service Discovery:** Erkennt automatisch neue Dienste (z. B. in Kubernetes).
+- **Alertmanager:** Versendet Warnungen auf Basis definierter Regeln.
+- **Grafana:** Visualisiert Metriken in Dashboards.
+- **Web UI:** Interface für direkte PromQL-Abfragen.
 
-PromQL ist eine leistungsstarke Sprache, mit der Sie detaillierte Metriken analysieren können.
+== Prometheus in Quarkus
+
+Quarkus bietet eine integrierte Unterstützung für Micrometer und Prometheus. Die Metriken werden unter `/q/metrics` bereitgestellt. Voraussetzung dafür ist die Erweiterung `quarkus-micrometer-registry-prometheus`.
+
+=== Konfiguration in Quarkus
+
+[source,properties]
+----
+quarkus.micrometer.export.prometheus.enabled=true
+quarkus.micrometer.export.prometheus.path=/q/metrics
+----
+
+Beispiel für `prometheus.yml`:
+
+[source,yaml]
+----
+scrape_configs:
+  - job_name: 'quarkus-app'
+    static_configs:
+      - targets: [ 'quarkus:8080' ]
+----
+
+=== Eigene Metriken in Resource-Klassen
+
+Mit dem `MeterRegistry` lassen sich benutzerdefinierte Metriken erzeugen:
+
+*Zähler (Counter)*
+
+[source,java]
+----
+registry.counter("person_counter").increment();
+----
+
+*Timer*
+
+[source,java]
+----
+Timer.Sample sample = Timer.start(registry);
+// Operation
+sample.stop(registry.timer("person_timer"));
+----
+
+*Gauge (z. B. Listengröße)*
+
+[source,java]
+----
+registry.gaugeCollectionSize("person_list_size", Tags.empty(), myList);
+----
+
+Diese Metriken erscheinen dann automatisch im `/q/metrics`-Output.
+
+=== PromQL-Beispiele für Quarkus
+
+[source,promql]
+----
+person_counter
+person_timer_count
+person_list_size
+http_server_requests_seconds_count{job="quarkus-app"}
+----
+
+Diese Abfragen funktionieren direkt im Prometheus-Interface oder in Grafana.
+
+== PromQL – Die Abfragesprache von Prometheus
+
+PromQL ist eine leistungsstarke Sprache zur Analyse von Metriken.
 
 === Beispiele
 
-1. Alle Metriken anzeigen:
+* **Alle Metriken anzeigen**
 [source,promql]
 ----
 {__name__=~".*"}
 ----
 
-2. Durchschnittliche CPU-Auslastung der letzten 5 Minuten:
+* **Durchschnittliche CPU-Auslastung (Beispiel für Systemmetriken)**
 [source,promql]
 ----
 avg(rate(cpu_usage_seconds_total[5m]))
 ----
 
-== Integration von Exporters
-
-=== Node Exporter
-
-Der Node Exporter sammelt Systemmetriken wie CPU, RAM und Festplattennutzung.
-
-[source,shell]
+* **Summe eines eigenen Counters**
+[source,promql]
 ----
-docker run -d -p 9100:9100 prom/node-exporter
+sum(person_counter)
 ----
-
-Öffnen Sie im Browser: http://localhost:9100/metrics.
 
 == Fazit
 
-Prometheus ist ein unverzichtbares Tool für die Überwachung moderner Anwendungen und Systeme. Mit seiner Flexibilität und Anpassbarkeit können Sie nahezu jedes Monitoring-Szenario abdecken.
+Prometheus ist ein leistungsstarkes Tool zur Überwachung moderner Anwendungen. Besonders in Verbindung mit Quarkus ist es einfach zu integrieren und bietet umfangreiche Möglichkeiten zur Analyse und Visualisierung von Metriken.
 
 == Quellen
 
-* Transkript des Prometheus-Videos (bereitgestellt vom Benutzer)
-* Offizielle Prometheus-Dokumentation: https://prometheus.io/docs/
-* Eigene Kenntnisse und Erfahrungen mit Prometheus
+* https://prometheus.io/docs/introduction/overview/[Prometheus Overview]
+* https://prometheus.io/docs/introduction/first_steps/[Prometheus First Steps]
+* https://grafana.com/docs/grafana/latest/datasources/prometheus/[Grafana Prometheus]
