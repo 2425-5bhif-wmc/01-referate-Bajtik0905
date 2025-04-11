@@ -1,5 +1,6 @@
-insert into user values("John Doe", 24);
-insert into user values("Jane Doe", 25);
-insert into user values("Alice Wonder", 18);
-insert into user values("Bob Marley", 30);
-insert into user values("Charlie Brown", 28);
+insert into PM_PERSON (p_name, p_age) values
+                                      ('John Doe', 24),
+                                      ('Jane Doe', 25),
+                                      ('Alice Wonder', 18),
+                                      ('Bob Marley', 30),
+                                      ('Charlie Brown', 28);

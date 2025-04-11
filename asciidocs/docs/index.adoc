@@ -45,6 +45,50 @@ image::architecture.png[title="Prometheus Architektur"]
 - **Grafana:** Visualisiert Metriken in Dashboards.
 - **Web UI:** Interface für direkte PromQL-Abfragen.
 
+== Prometheus vs. Micrometer
+
+Prometheus und Micrometer haben unterschiedliche Rollen im Monitoring-Stack, auch wenn sie oft zusammen verwendet werden:
+
+[cols="1,2",options="header"]
+|===
+|Aspekt |Beschreibung
+
+|**Prometheus**
+|Monitoring-System zur Erfassung, Speicherung und Analyse von Metriken. Es holt sich die Daten (Pull-Prinzip) regelmäßig von Endpunkten wie `/metrics` oder `/q/metrics`.
+
+|**Micrometer**
+|Bibliothek für Anwendungen zur Erzeugung von Metriken. Sie abstrahiert verschiedene Monitoring-Systeme (z. B. Prometheus, InfluxDB, Datadog) und bietet eine einheitliche API.
+
+|**Zusammenarbeit**
+|Micrometer erzeugt die Metriken innerhalb einer Anwendung (z. B. Quarkus-App). Prometheus sammelt diese Metriken dann regelmäßig ein.
+|===
+
+Micrometer ist also ein Produzent, während Prometheus ein Sammler und Analysator ist.
+
+== Weitere Monitoring-Alternativen (kurzer Überblick)
+
+[cols="1,2",options="header"]
+|===
+|Tool |Kurzbeschreibung
+
+|**Grafana Cloud**
+|Gehostete Monitoring-Lösung, integriert Prometheus, Loki und Tempo. Eher für schnelle Setups oder SaaS-Szenarien.
+
+|**Datadog**
+|Kommerzielle Lösung mit starker Integration in Cloud-Umgebungen, bietet Metriken, Logs und Tracing.
+
+|**InfluxDB**
+|Zeitreihendatenbank mit eigener Query-Sprache (Flux). Eignet sich für Metriken und Events.
+
+|**Zabbix**
+|Klassisches Monitoring-Tool mit Fokus auf Infrastrukturüberwachung, eher agentenbasiert.
+
+|**New Relic**
+|Komplettlösung für Application Performance Monitoring (APM), eher für größere Enterprise-Setups gedacht.
+
+|**OpenTelemetry**
+|Standard zur Sammlung von Logs, Metriken und Traces – ersetzt langfristig viele eigene APIs (wie Micrometer) und ist stark im Kommen.
+|===
 == Prometheus in Quarkus
 
 Quarkus bietet eine integrierte Unterstützung für Micrometer und Prometheus. Die Metriken werden unter `/q/metrics` bereitgestellt. Voraussetzung dafür ist die Erweiterung `quarkus-micrometer-registry-prometheus`.
@@ -67,46 +111,122 @@ scrape_configs:
       - targets: [ 'quarkus:8080' ]
 ----
 
+Mögliche Konfiguration in der `docker-compose.yml`:
+[source,yaml]
+----
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: always
+    networks:
+      - monitoring
+
+  quarkus:
+    build:
+      context: ../../../
+      dockerfile: ./src/main/docker/Dockerfile.jvm
+    container_name: quarkus
+    ports:
+      - "8080:8080" # Optional, for host access
+    restart: always
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+----
+
+IMPORTANT: Die services müssen im selben Netzwerk sein, damit Prometheus die Metriken abfragen kann.
+
 === Eigene Metriken in Resource-Klassen
 
 Mit dem `MeterRegistry` lassen sich benutzerdefinierte Metriken erzeugen:
 
-*Zähler (Counter)*
-
 [source,java]
 ----
-registry.counter("person_counter").increment();
-----
+package at.htl.feature;
 
-*Timer*
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.Timer;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 
-[source,java]
-----
-Timer.Sample sample = Timer.start(registry);
-// Operation
-sample.stop(registry.timer("person_timer"));
-----
+import java.util.LinkedList;
 
-*Gauge (z. B. Listengröße)*
+@ApplicationScoped
+@Path("/person")
+@Produces(MediaType.APPLICATION_JSON)
+public class PersonResource {
 
-[source,java]
-----
-registry.gaugeCollectionSize("person_list_size", Tags.empty(), myList);
-----
+    @Inject
+    MeterRegistry registry;
 
+    private LinkedList<String> list = new LinkedList<>();
+
+    @Inject
+    PersonRepository personRepository;
+
+    public PersonResource(MeterRegistry registry) {
+        this.registry = registry;
+        registry.gaugeCollectionSize("person_list_size", Tags.empty(), list);
+    }
+
+    // Counter für die Anzahl der Anfragen
+
+    @GET
+    @Path("/counter/check/{input}")
+    public boolean checkPersonCounter(@PathParam("input") String input) {
+        list.add(input);
+        registry.counter("person_counter").increment();
+        return getPerson(input);
+    }
+
+    // Timer für die Zeitmessung
+
+    @GET
+    @Path("/timer/check/{input}")
+    public boolean checkPersonTimer(@PathParam("input") String input) {
+        list.add(input);
+        Timer.Sample sample = Timer.start(registry);
+        boolean result = getPerson(input);
+        sample.stop(registry.timer("person_timer"));
+        return result;
+    }
+
+    // Method to check if a person exists in the database
+    public boolean getPerson(String input) {
+        String[] parts = input.split(",");
+        if (parts.length != 2 || input.isEmpty()) {
+            return false;  // Input format is not correct
+        }
+
+        String name = parts[0].trim();
+        int age = Integer.parseInt(parts[1].trim());
+
+        // Check if the person exists in the repository
+        Person person = (Person) personRepository.find("p_name = ?1 and p_age = ?2", name, age);
+
+        return person != null;  // Return true if person exists, false otherwise
+    }
+
+    @DELETE
+    @Path("/clear-list")
+    public void clearList() {
+        list.clear();
+    }
+}
+
+----
 Diese Metriken erscheinen dann automatisch im `/q/metrics`-Output.
-
-=== PromQL-Beispiele für Quarkus
-
-[source,promql]
-----
-person_counter
-person_timer_count
-person_list_size
-http_server_requests_seconds_count{job="quarkus-app"}
-----
-
-Diese Abfragen funktionieren direkt im Prometheus-Interface oder in Grafana.
 
 == PromQL – Die Abfragesprache von Prometheus
 
@@ -130,6 +250,16 @@ avg(rate(cpu_usage_seconds_total[5m]))
 [source,promql]
 ----
 sum(person_counter)
+----
+
+=== PromQL-Beispiele für Quarkus
+
+[source,promql]
+----
+person_counter
+person_timer_count
+person_list_size
+http_server_requests_seconds_count{job="quarkus-app"}
 ----
 
 == Fazit
