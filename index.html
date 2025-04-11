@@ -577,20 +577,22 @@ pre.rouge .gs {
 </li>
 <li><a href="#_warum_prometheus">2. Warum Prometheus?</a></li>
 <li><a href="#_architektur_von_prometheus">3. Architektur von Prometheus</a></li>
-<li><a href="#_prometheus_in_quarkus">4. Prometheus in Quarkus</a>
+<li><a href="#_prometheus_vs_micrometer">4. Prometheus vs. Micrometer</a></li>
+<li><a href="#_weitere_monitoring_alternativen_kurzer_überblick">5. Weitere Monitoring-Alternativen (kurzer Überblick)</a></li>
+<li><a href="#_prometheus_in_quarkus">6. Prometheus in Quarkus</a>
 <ul class="sectlevel2">
-<li><a href="#_konfiguration_in_quarkus">4.1. Konfiguration in Quarkus</a></li>
-<li><a href="#_eigene_metriken_in_resource_klassen">4.2. Eigene Metriken in Resource-Klassen</a></li>
-<li><a href="#_promql_beispiele_für_quarkus">4.3. PromQL-Beispiele für Quarkus</a></li>
+<li><a href="#_konfiguration_in_quarkus">6.1. Konfiguration in Quarkus</a></li>
+<li><a href="#_eigene_metriken_in_resource_klassen">6.2. Eigene Metriken in Resource-Klassen</a></li>
 </ul>
 </li>
-<li><a href="#_promql_die_abfragesprache_von_prometheus">5. PromQL – Die Abfragesprache von Prometheus</a>
+<li><a href="#_promql_die_abfragesprache_von_prometheus">7. PromQL – Die Abfragesprache von Prometheus</a>
 <ul class="sectlevel2">
-<li><a href="#_beispiele">5.1. Beispiele</a></li>
+<li><a href="#_beispiele">7.1. Beispiele</a></li>
+<li><a href="#_promql_beispiele_für_quarkus">7.2. PromQL-Beispiele für Quarkus</a></li>
 </ul>
 </li>
-<li><a href="#_fazit">6. Fazit</a></li>
-<li><a href="#_quellen">7. Quellen</a></li>
+<li><a href="#_fazit">8. Fazit</a></li>
+<li><a href="#_quellen">9. Quellen</a></li>
 </ul>
 </div>
 </div>
@@ -687,13 +689,93 @@ pre.rouge .gs {
 </div>
 </div>
 <div class="sect1">
-<h2 id="_prometheus_in_quarkus"><a class="anchor" href="#_prometheus_in_quarkus"></a>4. Prometheus in Quarkus</h2>
+<h2 id="_prometheus_vs_micrometer"><a class="anchor" href="#_prometheus_vs_micrometer"></a>4. Prometheus vs. Micrometer</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Prometheus und Micrometer haben unterschiedliche Rollen im Monitoring-Stack, auch wenn sie oft zusammen verwendet werden:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Aspekt</th>
+<th class="tableblock halign-left valign-top">Beschreibung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Prometheus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring-System zur Erfassung, Speicherung und Analyse von Metriken. Es holt sich die Daten (Pull-Prinzip) regelmäßig von Endpunkten wie <code>/metrics</code> oder <code>/q/metrics</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Micrometer</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bibliothek für Anwendungen zur Erzeugung von Metriken. Sie abstrahiert verschiedene Monitoring-Systeme (z. B. Prometheus, InfluxDB, Datadog) und bietet eine einheitliche API.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Zusammenarbeit</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Micrometer erzeugt die Metriken innerhalb einer Anwendung (z. B. Quarkus-App). Prometheus sammelt diese Metriken dann regelmäßig ein.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Micrometer ist also ein Produzent, während Prometheus ein Sammler und Analysator ist.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_weitere_monitoring_alternativen_kurzer_überblick"><a class="anchor" href="#_weitere_monitoring_alternativen_kurzer_überblick"></a>5. Weitere Monitoring-Alternativen (kurzer Überblick)</h2>
+<div class="sectionbody">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Tool</th>
+<th class="tableblock halign-left valign-top">Kurzbeschreibung</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Grafana Cloud</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gehostete Monitoring-Lösung, integriert Prometheus, Loki und Tempo. Eher für schnelle Setups oder SaaS-Szenarien.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Datadog</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kommerzielle Lösung mit starker Integration in Cloud-Umgebungen, bietet Metriken, Logs und Tracing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>InfluxDB</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Zeitreihendatenbank mit eigener Query-Sprache (Flux). Eignet sich für Metriken und Events.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Zabbix</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Klassisches Monitoring-Tool mit Fokus auf Infrastrukturüberwachung, eher agentenbasiert.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>New Relic</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Komplettlösung für Application Performance Monitoring (APM), eher für größere Enterprise-Setups gedacht.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>OpenTelemetry</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standard zur Sammlung von Logs, Metriken und Traces – ersetzt langfristig viele eigene APIs (wie Micrometer) und ist stark im Kommen.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prometheus_in_quarkus"><a class="anchor" href="#_prometheus_in_quarkus"></a>6. Prometheus in Quarkus</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Quarkus bietet eine integrierte Unterstützung für Micrometer und Prometheus. Die Metriken werden unter <code>/q/metrics</code> bereitgestellt. Voraussetzung dafür ist die Erweiterung <code>quarkus-micrometer-registry-prometheus</code>.</p>
 </div>
 <div class="sect2">
-<h3 id="_konfiguration_in_quarkus"><a class="anchor" href="#_konfiguration_in_quarkus"></a>4.1. Konfiguration in Quarkus</h3>
+<h3 id="_konfiguration_in_quarkus"><a class="anchor" href="#_konfiguration_in_quarkus"></a>6.1. Konfiguration in Quarkus</h3>
 <div class="listingblock">
 <div class="content">
 <pre class="rouge highlight"><code data-lang="properties"><span class="py">quarkus.micrometer.export.prometheus.enabled</span><span class="p">=</span><span class="s">true</span>
@@ -711,66 +793,149 @@ pre.rouge .gs {
       <span class="pi">-</span> <span class="na">targets</span><span class="pi">:</span> <span class="pi">[</span> <span class="s1">'</span><span class="s">quarkus:8080'</span> <span class="pi">]</span></code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>Mögliche Konfiguration in der <code>docker-compose.yml</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="yaml"><span class="na">services</span><span class="pi">:</span>
+  <span class="na">prometheus</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s">prom/prometheus:latest</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">prometheus</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">./prometheus.yml:/etc/prometheus/prometheus.yml</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">9090:9090"</span>
+    <span class="na">restart</span><span class="pi">:</span> <span class="s">always</span>
+    <span class="na">networks</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">monitoring</span>
+
+  <span class="na">quarkus</span><span class="pi">:</span>
+    <span class="na">build</span><span class="pi">:</span>
+      <span class="na">context</span><span class="pi">:</span> <span class="s">../../../</span>
+      <span class="na">dockerfile</span><span class="pi">:</span> <span class="s">./src/main/docker/Dockerfile.jvm</span>
+    <span class="na">container_name</span><span class="pi">:</span> <span class="s">quarkus</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8080:8080"</span> <span class="c1"># Optional, for host access</span>
+    <span class="na">restart</span><span class="pi">:</span> <span class="s">always</span>
+    <span class="na">networks</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">monitoring</span>
+
+<span class="na">networks</span><span class="pi">:</span>
+  <span class="na">monitoring</span><span class="pi">:</span>
+    <span class="na">driver</span><span class="pi">:</span> <span class="s">bridge</span></code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Die services müssen im selben Netzwerk sein, damit Prometheus die Metriken abfragen kann.
+</td>
+</tr>
+</table>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_eigene_metriken_in_resource_klassen"><a class="anchor" href="#_eigene_metriken_in_resource_klassen"></a>4.2. Eigene Metriken in Resource-Klassen</h3>
+<h3 id="_eigene_metriken_in_resource_klassen"><a class="anchor" href="#_eigene_metriken_in_resource_klassen"></a>6.2. Eigene Metriken in Resource-Klassen</h3>
 <div class="paragraph">
 <p>Mit dem <code>MeterRegistry</code> lassen sich benutzerdefinierte Metriken erzeugen:</p>
 </div>
-<div class="paragraph">
-<p><strong>Zähler (Counter)</strong></p>
-</div>
 <div class="listingblock">
 <div class="content">
-<pre class="rouge highlight"><code data-lang="java"><span class="n">registry</span><span class="o">.</span><span class="na">counter</span><span class="o">(</span><span class="s">"person_counter"</span><span class="o">).</span><span class="na">increment</span><span class="o">();</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p><strong>Timer</strong></p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="rouge highlight"><code data-lang="java"><span class="nc">Timer</span><span class="o">.</span><span class="na">Sample</span> <span class="n">sample</span> <span class="o">=</span> <span class="nc">Timer</span><span class="o">.</span><span class="na">start</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
-<span class="c1">// Operation</span>
-<span class="n">sample</span><span class="o">.</span><span class="na">stop</span><span class="o">(</span><span class="n">registry</span><span class="o">.</span><span class="na">timer</span><span class="o">(</span><span class="s">"person_timer"</span><span class="o">));</span></code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p><strong>Gauge (z. B. Listengröße)</strong></p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="rouge highlight"><code data-lang="java"><span class="n">registry</span><span class="o">.</span><span class="na">gaugeCollectionSize</span><span class="o">(</span><span class="s">"person_list_size"</span><span class="o">,</span> <span class="nc">Tags</span><span class="o">.</span><span class="na">empty</span><span class="o">(),</span> <span class="n">myList</span><span class="o">);</span></code></pre>
+<pre class="rouge highlight"><code data-lang="java"><span class="kn">package</span> <span class="nn">at.htl.feature</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">io.micrometer.core.instrument.MeterRegistry</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.micrometer.core.instrument.Tags</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">io.micrometer.core.instrument.Timer</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">jakarta.enterprise.context.ApplicationScoped</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">jakarta.inject.Inject</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">jakarta.ws.rs.*</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">jakarta.ws.rs.core.MediaType</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">java.util.LinkedList</span><span class="o">;</span>
+
+<span class="nd">@ApplicationScoped</span>
+<span class="nd">@Path</span><span class="o">(</span><span class="s">"/person"</span><span class="o">)</span>
+<span class="nd">@Produces</span><span class="o">(</span><span class="nc">MediaType</span><span class="o">.</span><span class="na">APPLICATION_JSON</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">PersonResource</span> <span class="o">{</span>
+
+    <span class="nd">@Inject</span>
+    <span class="nc">MeterRegistry</span> <span class="n">registry</span><span class="o">;</span>
+
+    <span class="kd">private</span> <span class="nc">LinkedList</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">&gt;</span> <span class="n">list</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">LinkedList</span><span class="o">&lt;&gt;();</span>
+
+    <span class="nd">@Inject</span>
+    <span class="nc">PersonRepository</span> <span class="n">personRepository</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="nf">PersonResource</span><span class="o">(</span><span class="nc">MeterRegistry</span> <span class="n">registry</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">registry</span> <span class="o">=</span> <span class="n">registry</span><span class="o">;</span>
+        <span class="n">registry</span><span class="o">.</span><span class="na">gaugeCollectionSize</span><span class="o">(</span><span class="s">"person_list_size"</span><span class="o">,</span> <span class="nc">Tags</span><span class="o">.</span><span class="na">empty</span><span class="o">(),</span> <span class="n">list</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="c1">// Counter für die Anzahl der Anfragen</span>
+
+    <span class="nd">@GET</span>
+    <span class="nd">@Path</span><span class="o">(</span><span class="s">"/counter/check/{input}"</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">checkPersonCounter</span><span class="o">(</span><span class="nd">@PathParam</span><span class="o">(</span><span class="s">"input"</span><span class="o">)</span> <span class="nc">String</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">list</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+        <span class="n">registry</span><span class="o">.</span><span class="na">counter</span><span class="o">(</span><span class="s">"person_counter"</span><span class="o">).</span><span class="na">increment</span><span class="o">();</span>
+        <span class="k">return</span> <span class="nf">getPerson</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="c1">// Timer für die Zeitmessung</span>
+
+    <span class="nd">@GET</span>
+    <span class="nd">@Path</span><span class="o">(</span><span class="s">"/timer/check/{input}"</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">checkPersonTimer</span><span class="o">(</span><span class="nd">@PathParam</span><span class="o">(</span><span class="s">"input"</span><span class="o">)</span> <span class="nc">String</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">list</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+        <span class="nc">Timer</span><span class="o">.</span><span class="na">Sample</span> <span class="n">sample</span> <span class="o">=</span> <span class="nc">Timer</span><span class="o">.</span><span class="na">start</span><span class="o">(</span><span class="n">registry</span><span class="o">);</span>
+        <span class="kt">boolean</span> <span class="n">result</span> <span class="o">=</span> <span class="n">getPerson</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+        <span class="n">sample</span><span class="o">.</span><span class="na">stop</span><span class="o">(</span><span class="n">registry</span><span class="o">.</span><span class="na">timer</span><span class="o">(</span><span class="s">"person_timer"</span><span class="o">));</span>
+        <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="c1">// Method to check if a person exists in the database</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">getPerson</span><span class="o">(</span><span class="nc">String</span> <span class="n">input</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">String</span><span class="o">[]</span> <span class="n">parts</span> <span class="o">=</span> <span class="n">input</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">","</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">parts</span><span class="o">.</span><span class="na">length</span> <span class="o">!=</span> <span class="mi">2</span> <span class="o">||</span> <span class="n">input</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>  <span class="c1">// Input format is not correct</span>
+        <span class="o">}</span>
+
+        <span class="nc">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">parts</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">trim</span><span class="o">();</span>
+        <span class="kt">int</span> <span class="n">age</span> <span class="o">=</span> <span class="nc">Integer</span><span class="o">.</span><span class="na">parseInt</span><span class="o">(</span><span class="n">parts</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="na">trim</span><span class="o">());</span>
+
+        <span class="c1">// Check if the person exists in the repository</span>
+        <span class="nc">Person</span> <span class="n">person</span> <span class="o">=</span> <span class="o">(</span><span class="nc">Person</span><span class="o">)</span> <span class="n">personRepository</span><span class="o">.</span><span class="na">find</span><span class="o">(</span><span class="s">"p_name = ?1 and p_age = ?2"</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">age</span><span class="o">);</span>
+
+        <span class="k">return</span> <span class="n">person</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">;</span>  <span class="c1">// Return true if person exists, false otherwise</span>
+    <span class="o">}</span>
+
+    <span class="nd">@DELETE</span>
+    <span class="nd">@Path</span><span class="o">(</span><span class="s">"/clear-list"</span><span class="o">)</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">clearList</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">list</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Diese Metriken erscheinen dann automatisch im <code>/q/metrics</code>-Output.</p>
 </div>
 </div>
-<div class="sect2">
-<h3 id="_promql_beispiele_für_quarkus"><a class="anchor" href="#_promql_beispiele_für_quarkus"></a>4.3. PromQL-Beispiele für Quarkus</h3>
-<div class="listingblock">
-<div class="content">
-<pre class="rouge highlight"><code data-lang="promql">person_counter
-person_timer_count
-person_list_size
-http_server_requests_seconds_count{job="quarkus-app"}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Diese Abfragen funktionieren direkt im Prometheus-Interface oder in Grafana.</p>
-</div>
-</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_promql_die_abfragesprache_von_prometheus"><a class="anchor" href="#_promql_die_abfragesprache_von_prometheus"></a>5. PromQL – Die Abfragesprache von Prometheus</h2>
+<h2 id="_promql_die_abfragesprache_von_prometheus"><a class="anchor" href="#_promql_die_abfragesprache_von_prometheus"></a>7. PromQL – Die Abfragesprache von Prometheus</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>PromQL ist eine leistungsstarke Sprache zur Analyse von Metriken.</p>
 </div>
 <div class="sect2">
-<h3 id="_beispiele"><a class="anchor" href="#_beispiele"></a>5.1. Beispiele</h3>
+<h3 id="_beispiele"><a class="anchor" href="#_beispiele"></a>7.1. Beispiele</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -808,10 +973,21 @@ http_server_requests_seconds_count{job="quarkus-app"}</code></pre>
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_promql_beispiele_für_quarkus"><a class="anchor" href="#_promql_beispiele_für_quarkus"></a>7.2. PromQL-Beispiele für Quarkus</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="rouge highlight"><code data-lang="promql">person_counter
+person_timer_count
+person_list_size
+http_server_requests_seconds_count{job="quarkus-app"}</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_fazit"><a class="anchor" href="#_fazit"></a>6. Fazit</h2>
+<h2 id="_fazit"><a class="anchor" href="#_fazit"></a>8. Fazit</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Prometheus ist ein leistungsstarkes Tool zur Überwachung moderner Anwendungen. Besonders in Verbindung mit Quarkus ist es einfach zu integrieren und bietet umfangreiche Möglichkeiten zur Analyse und Visualisierung von Metriken.</p>
@@ -819,7 +995,7 @@ http_server_requests_seconds_count{job="quarkus-app"}</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_quellen"><a class="anchor" href="#_quellen"></a>7. Quellen</h2>
+<h2 id="_quellen"><a class="anchor" href="#_quellen"></a>9. Quellen</h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -839,7 +1015,7 @@ http_server_requests_seconds_count{job="quarkus-app"}</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-10 21:50:14 UTC
+Last updated 2025-04-11 05:55:52 UTC
 </div>
 </div>
 </body>
